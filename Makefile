@@ -6,8 +6,9 @@ termux-elf-cleaner: termux-elf-cleaner.cpp
 clean:
 	rm -f termux-elf-cleaner
 
-install: termux-efl-cleaner
+install: termux-elf-cleaner
 	mkdir -p $(PREFIX)/bin
+	install termux-elf-cleaner $(PREFIX)/bin/termux-elf-cleaner
 
 uninstall:
 	rm -f $(PREFIX)/bin/termux-elf-cleaner
