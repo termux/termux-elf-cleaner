@@ -189,7 +189,7 @@ int main(int argc, char const** argv)
 		} else if (bit_value == 2) {
 			if (!process_elf<Elf64_Ehdr, Elf64_Shdr, Elf64_Dyn>(bytes, st.st_size, file_name)) return 1;
 		} else {
-			printf("termux-elf-cleaner: Incorrect bit value %d in '%s'\n", bit_value, file_name);
+			fprintf(stderr, "termux-elf-cleaner: Incorrect bit value %d in '%s'\n", bit_value, file_name);
 			return 1;
 		}
 
