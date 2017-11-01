@@ -14,6 +14,7 @@
 #define DT_VERSYM 0x6ffffff0
 #define DT_VERNEEDED 0x6ffffffe
 #define DT_VERNEEDNUM 0x6fffffff
+#define DT_0x7ffffffd 0x7ffffffd
 
 template<typename ElfHeaderType /*Elf{32,64}_Ehdr*/,
 	 typename ElfSectionHeaderType /*Elf{32,64}_Shdr*/,
@@ -66,6 +67,7 @@ bool process_elf(uint8_t* bytes, size_t elf_file_size, char const* file_name)
 					case DT_VERDEFNUM: removed_name = "DT_VERDEFNUM"; break;
 					case DT_RPATH: removed_name = "DT_RPATH"; break;
 					case DT_RUNPATH: removed_name = "DT_RUNPATH"; break;
+                                        case DT_0x7ffffffd: removed_name = "DT_0x7ffffffd";break;
 				}
 				if (removed_name != nullptr) {
 					printf("termux-elf-cleaner: Removing the %s dynamic section entry from '%s'\n", removed_name, file_name);
