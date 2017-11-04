@@ -15,6 +15,20 @@
 #define DT_VERNEEDED 0x6ffffffe
 #define DT_VERNEEDNUM 0x6fffffff
 
+/** As only DF_1_NOW and DF_1_GLOBAL are supported on Android,
+ *  and DF_1_NODELETE is supported after Android 6.
+ *  so we remove it in order to reduce openjdk-9's warnings.
+ */
+#define DT_FLAGS_1 0x6ffffffb
+
+/** Copy from toolchain's elf.h */
+#define DF_1_NOW	0x00000001	/* Set RTLD_NOW for this object.  */
+#define DF_1_GLOBAL	0x00000002	/* Set RTLD_GLOBAL for this object.  */
+#define DF_1_NODELETE	0x00000008	/* Set RTLD_NODELETE for this object.*/
+
+/* Copy from android source and modified. */
+#define SUPPORTED_DT_FLAGS_1  (DF_1_NOW | DF_1_GLOBAL)
+
 template<typename ElfHeaderType /*Elf{32,64}_Ehdr*/,
 	 typename ElfSectionHeaderType /*Elf{32,64}_Shdr*/,
 	 typename ElfDynamicSectionEntryType /* Elf{32,64}_Dyn */>
@@ -73,6 +87,29 @@ bool process_elf(uint8_t* bytes, size_t elf_file_size, char const* file_name)
 					dynamic_section_entry->d_tag = DT_NULL;
 					// Decrease j to process new entry index:
 					std::swap(dynamic_section[j--], dynamic_section[last_nonnull_entry_idx--]);
+					
+				} else if (dynamic_section_entry->d_tag == DT_FLAGS_1) {
+				    /**
+				     * Modified by Kiva.
+				     * Remove unsupported DF_1_FLAGS in DT_FLAGS_1 tag.
+				     */
+				    if ((dynamic_section_entry->d_un.d_val & ~SUPPORTED_DT_FLAGS_1) != 0) {
+				        
+				        decltype(dynamic_section_entry->d_un.d_val) new_d_val = 0;
+				        if ((dynamic_section_entry->d_un.d_val & DF_1_NOW) == DF_1_NOW) {
+				            new_d_val |= DF_1_NOW;
+				        }
+				        if ((dynamic_section_entry->d_un.d_val & DF_1_GLOBAL) == DF_1_GLOBAL) {
+				            new_d_val |= DF_1_GLOBAL;
+				        }
+				        
+				        if (new_d_val != dynamic_section_entry->d_un.d_val) {
+				            printf("termux-elf-cleaner: Replacing the unsupported DF_1_FLAGS %p with %p from '%s'\n",
+				                    dynamic_section_entry->d_un.d_val, new_d_val, file_name);
+				            
+				            dynamic_section_entry->d_un.d_val = new_d_val;
+				        }
+                    }
 				}
 			}
 		} else if (section_header_entry->sh_type == SHT_GNU_verdef ||
