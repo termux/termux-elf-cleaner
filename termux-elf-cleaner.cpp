@@ -15,6 +15,7 @@
 #define DT_FLAGS_1 0x6ffffffb
 #define DT_VERNEEDED 0x6ffffffe
 #define DT_VERNEEDNUM 0x6fffffff
+#define DT_GNU_HASH 0x6ffffef5
 
 #define DF_1_NOW	0x00000001	/* Set RTLD_NOW for this object.  */
 #define DF_1_GLOBAL	0x00000002	/* Set RTLD_GLOBAL for this object.  */
@@ -74,6 +75,7 @@ bool process_elf(uint8_t* bytes, size_t elf_file_size, char const* file_name)
 					case DT_VERDEFNUM: removed_name = "DT_VERDEFNUM"; break;
 					case DT_RPATH: removed_name = "DT_RPATH"; break;
 					case DT_RUNPATH: removed_name = "DT_RUNPATH"; break;
+					case DT_GNU_HASH: removed_name = "DT_GNU_HASH"; break;
 				}
 				if (removed_name != nullptr) {
 					printf("termux-elf-cleaner: Removing the %s dynamic section entry from '%s'\n", removed_name, file_name);
@@ -169,4 +171,3 @@ int main(int argc, char const** argv)
 	}
 	return 0;
 }
-
