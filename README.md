@@ -16,6 +16,7 @@ This utility strips away the following dynamic section entries:
 - `DT_VERNEEDED` - supported from Android 6.0.
 - `DT_VERNEEDNUM` - supported from Android 6.0.
 - `DT_VERSYM` - supported from Android 6.0.
+- `DT_GNU_HASH` - supported from Android 5.0.
 
 It also removes the three ELF sections of type:
 
