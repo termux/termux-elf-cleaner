@@ -8,6 +8,10 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#ifndef __ANDROID_API__
+#define __ANDROID_API__ 21
+#endif
+
 // Include a local elf.h copy as not all platforms have it.
 #include "elf.h"
 
@@ -67,13 +71,17 @@ bool process_elf(uint8_t* bytes, size_t elf_file_size, char const* file_name)
 				ElfDynamicSectionEntryType* dynamic_section_entry = dynamic_section + j;
 				char const* removed_name = nullptr;
 				switch (dynamic_section_entry->d_tag) {
+#if __ANDROID_API__ < 23
 					case DT_VERSYM: removed_name = "DT_VERSYM"; break;
 					case DT_VERNEEDED: removed_name = "DT_VERNEEDED"; break;
 					case DT_VERNEEDNUM: removed_name = "DT_VERNEEDNUM"; break;
 					case DT_VERDEF: removed_name = "DT_VERDEF"; break;
 					case DT_VERDEFNUM: removed_name = "DT_VERDEFNUM"; break;
+#endif
 					case DT_RPATH: removed_name = "DT_RPATH"; break;
+#if __ANDROID_API__ < 24
 					case DT_RUNPATH: removed_name = "DT_RUNPATH"; break;
+#endif
 				}
 				if (removed_name != nullptr) {
 					printf("termux-elf-cleaner: Removing the %s dynamic section entry from '%s'\n", removed_name, file_name);
@@ -111,8 +119,9 @@ int main(int argc, char const** argv)
 {
 	if (argc < 2 || (argc == 2 && strcmp(argv[1], "-h")==0)) {
 		fprintf(stderr, "usage: %s <filenames>\n", argv[0]);
-		fprintf(stderr, "\nProcesses ELF files to remove unsupported section types \n"
-				"and dynamic section entries which the Android linker warns about.\n");
+		fprintf(stderr, "\nProcesses ELF files to remove unsupported section types\n"
+				"and dynamic section entries which the Android linker (API %d)\nwarns about.\n",
+				__ANDROID_API__);
 		return 1;
 	}
 
@@ -169,4 +178,3 @@ int main(int argc, char const** argv)
 	}
 	return 0;
 }
-
