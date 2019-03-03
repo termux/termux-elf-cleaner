@@ -15,6 +15,7 @@
 // Include a local elf.h copy as not all platforms have it.
 #include "elf.h"
 
+#define DT_GNU_HASH 0x6ffffef5
 #define DT_VERSYM 0x6ffffff0
 #define DT_FLAGS_1 0x6ffffffb
 #define DT_VERNEEDED 0x6ffffffe
@@ -71,6 +72,9 @@ bool process_elf(uint8_t* bytes, size_t elf_file_size, char const* file_name)
 				ElfDynamicSectionEntryType* dynamic_section_entry = dynamic_section + j;
 				char const* removed_name = nullptr;
 				switch (dynamic_section_entry->d_tag) {
+#if __ANDROID_API__ <= 21
+					case DT_GNU_HASH: removed_name = "DT_GNU_HASH"; break;
+#endif
 #if __ANDROID_API__ < 23
 					case DT_VERSYM: removed_name = "DT_VERSYM"; break;
 					case DT_VERNEEDED: removed_name = "DT_VERNEEDED"; break;
