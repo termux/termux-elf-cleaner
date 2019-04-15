@@ -25,8 +25,12 @@
 #define DF_1_GLOBAL	0x00000002	/* Set RTLD_GLOBAL for this object.  */
 #define DF_1_NODELETE	0x00000008	/* Set RTLD_NODELETE for this object.*/
 
+#if __ANDROID_API__ < 23
+#define SUPPORTED_DT_FLAGS_1 (DF_1_NOW | DF_1_GLOBAL)
+#else
 // The supported DT_FLAGS_1 values as of Android 6.0.
 #define SUPPORTED_DT_FLAGS_1 (DF_1_NOW | DF_1_GLOBAL | DF_1_NODELETE)
+#endif
 
 template<typename ElfHeaderType /*Elf{32,64}_Ehdr*/,
 	 typename ElfSectionHeaderType /*Elf{32,64}_Shdr*/,
