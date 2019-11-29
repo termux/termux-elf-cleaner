@@ -113,14 +113,14 @@ bool process_elf(uint8_t* bytes, size_t elf_file_size, char const* file_name)
 				}
 			}
 		}
-//#if __ANDROID_API__ < 23
-//		else if (section_header_entry->sh_type == SHT_GNU_verdef ||
-//			   section_header_entry->sh_type == SHT_GNU_verneed ||
-//			   section_header_entry->sh_type == SHT_GNU_versym) {
-//			printf("termux-elf-cleaner: Removing version section from '%s'\n", file_name);
-//			section_header_entry->sh_type = SHT_NULL;
-//		}
-//#endif
+#if __ANDROID_API__ < 23
+		else if (section_header_entry->sh_type == SHT_GNU_verdef ||
+			   section_header_entry->sh_type == SHT_GNU_verneed ||
+			   section_header_entry->sh_type == SHT_GNU_versym) {
+			printf("termux-elf-cleaner: Removing version section from '%s'\n", file_name);
+			section_header_entry->sh_type = SHT_NULL;
+		}
+#endif
 	}
 	return true;
 }
