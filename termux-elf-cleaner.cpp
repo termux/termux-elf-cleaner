@@ -21,6 +21,10 @@
 #define DT_VERNEEDED 0x6ffffffe
 #define DT_VERNEEDNUM 0x6fffffff
 
+#define DT_AARCH64_BTI_PLT 0x70000001
+#define DT_AARCH64_PAC_PLT 0x70000003
+#define DT_AARCH64_VARIANT_PCS 0x70000005
+
 #define DF_1_NOW	0x00000001	/* Set RTLD_NOW for this object.  */
 #define DF_1_GLOBAL	0x00000002	/* Set RTLD_GLOBAL for this object.  */
 #define DF_1_NODELETE	0x00000008	/* Set RTLD_NODELETE for this object.*/
@@ -49,6 +53,8 @@ bool process_elf(uint8_t* bytes, size_t elf_file_size, char const* file_name)
 		return false;
 	}
 	ElfSectionHeaderType* section_header_table = reinterpret_cast<ElfSectionHeaderType*>(bytes + elf_hdr->e_shoff);
+
+	bool is_aarch64 = (elf_hdr->e_machine == 183); /* EM_AARCH64 */
 
 	for (unsigned int i = 1; i < elf_hdr->e_shnum; i++) {
 		ElfSectionHeaderType* section_header_entry = section_header_table + i;
@@ -89,6 +95,11 @@ bool process_elf(uint8_t* bytes, size_t elf_file_size, char const* file_name)
 					case DT_RPATH: removed_name = "DT_RPATH"; break;
 #if __ANDROID_API__ < 24
 					case DT_RUNPATH: removed_name = "DT_RUNPATH"; break;
+#endif
+#if __ANDROID_API__ < 31
+					case DT_AARCH64_BTI_PLT: if(is_aarch64) removed_name = "DT_AARCH64_BTI_PLT"; break;
+					case DT_AARCH64_PAC_PLT: if(is_aarch64) removed_name = "DT_AARCH64_PAC_PLT"; break;
+					case DT_AARCH64_VARIANT_PCS: if(is_aarch64) removed_name = "DT_AARCH64_VARIANT_PCS"; break;
 #endif
 				}
 				if (removed_name != nullptr) {
