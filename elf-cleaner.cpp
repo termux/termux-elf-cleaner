@@ -70,8 +70,10 @@ Options:\n\
 --version             output version information and exit\n"
 };
 
-template<typename ElfHeaderType /*Elf{32,64}_Ehdr*/,
+template<typename ElfWord /*Elf{32_Word,64_Xword}*/,
+         typename ElfHeaderType /*Elf{32,64}_Ehdr*/,
 	 typename ElfSectionHeaderType /*Elf{32,64}_Shdr*/,
+	 typename ElfProgramHeaderType /*Elf{32,64}_Phdr*/,
 	 typename ElfDynamicSectionEntryType /* Elf{32,64}_Dyn */>
 bool process_elf(uint8_t* bytes, size_t elf_file_size, char const* file_name)
 {
@@ -82,6 +84,33 @@ bool process_elf(uint8_t* bytes, size_t elf_file_size, char const* file_name)
 	}
 	ElfHeaderType* elf_hdr = reinterpret_cast<ElfHeaderType*>(bytes);
 
+	bool is_aarch64 = (elf_hdr->e_machine == 183); /* EM_AARCH64 */
+
+	/* Check TLS segment alignment in program headers if api level is < 29 */
+	size_t last_program_header_byte = elf_hdr->e_phoff + sizeof(ElfProgramHeaderType) * elf_hdr->e_phnum;
+	if (last_program_header_byte > elf_file_size) {
+		fprintf(stderr, "%s: Program header for '%s' would end at %zu but file size only %zu\n",
+			PACKAGE_NAME, file_name, last_program_header_byte, elf_file_size);
+		return false;
+	}
+	ElfProgramHeaderType* program_header_table = reinterpret_cast<ElfProgramHeaderType*>(bytes + elf_hdr->e_phoff);
+
+	size_t tls_min_alignment = sizeof(ElfWord)*8;
+	/* Iterate over program headers */
+	for (unsigned int i = 1; i < elf_hdr->e_phnum; i++) {
+		ElfProgramHeaderType* program_header_entry = program_header_table + i;
+		if (program_header_entry->p_type == PT_TLS &&
+		    program_header_entry->p_align < tls_min_alignment) {
+			if (!quiet)
+				printf("%s: Changing TLS alignment for '%s' to %u, instead of %u\n",
+				       PACKAGE_NAME, file_name,
+				       (unsigned int)tls_min_alignment,
+				       (unsigned int)program_header_entry->p_align);
+			if (!dry_run)
+				program_header_entry->p_align = tls_min_alignment;
+		}
+	}
+
 	size_t last_section_header_byte = elf_hdr->e_shoff + sizeof(ElfSectionHeaderType) * elf_hdr->e_shnum;
 	if (last_section_header_byte > elf_file_size) {
 		fprintf(stderr, "%s: Section header for '%s' would end at %zu but file size only %zu\n",
@@ -90,8 +119,7 @@ bool process_elf(uint8_t* bytes, size_t elf_file_size, char const* file_name)
 	}
 	ElfSectionHeaderType* section_header_table = reinterpret_cast<ElfSectionHeaderType*>(bytes + elf_hdr->e_shoff);
 
-	bool is_aarch64 = (elf_hdr->e_machine == 183); /* EM_AARCH64 */
-
+	/* Iterate over section headers */
 	for (unsigned int i = 1; i < elf_hdr->e_shnum; i++) {
 		ElfSectionHeaderType* section_header_entry = section_header_table + i;
 		if (section_header_entry->sh_type == SHT_DYNAMIC) {
@@ -249,10 +277,10 @@ int main(int argc, char **argv)
 
 		uint8_t const bit_value = bytes[/*EI_CLASS*/4];
 		if (bit_value == 1) {
-			if (!process_elf<Elf32_Ehdr, Elf32_Shdr, Elf32_Dyn>(bytes, st.st_size, file_name))
+			if (!process_elf<Elf32_Word, Elf32_Ehdr, Elf32_Shdr, Elf32_Phdr, Elf32_Dyn>(bytes, st.st_size, file_name))
 				return 1;
 		} else if (bit_value == 2) {
-			if (!process_elf<Elf64_Ehdr, Elf64_Shdr, Elf64_Dyn>(bytes, st.st_size, file_name))
+			if (!process_elf<Elf64_Xword, Elf64_Ehdr, Elf64_Shdr, Elf64_Phdr, Elf64_Dyn>(bytes, st.st_size, file_name))
 				return 1;
 		} else {
 			fprintf(stderr, "%s: Incorrect bit value %d in '%s'\n",

@@ -70,6 +70,28 @@ typedef struct {
 	Elf64_Half    e_shstrndx;             /* Section header string table index */
 } Elf64_Ehdr;
 
+/* Program header entry. The number of program entries in the file are determined by the "e_phnum" field of the ELF header.*/
+typedef struct elf32_phdr {
+	Elf32_Word  p_type;
+	Elf32_Off   p_offset;
+	Elf32_Addr  p_vaddr;
+	Elf32_Addr  p_paddr;
+	Elf32_Word  p_filesz;
+	Elf32_Word  p_memsz;
+	Elf32_Word  p_flags;
+	Elf32_Word  p_align;
+} Elf32_Phdr;
+typedef struct elf64_phdr {
+	Elf64_Word  p_type;
+	Elf64_Word  p_flags;
+	Elf64_Off   p_offset;
+	Elf64_Addr  p_vaddr;
+	Elf64_Addr  p_paddr;
+	Elf64_Xword p_filesz;
+	Elf64_Xword p_memsz;
+	Elf64_Xword p_align;
+} Elf64_Phdr;
+
 /* Section header entry. The number of section entries in the file are determined by the "e_shnum" field of the ELF header.*/
 typedef struct {
 	Elf32_Word    sh_name;                /* Section name (string tbl index) */
@@ -95,6 +117,16 @@ typedef struct {
 	Elf64_Xword   sh_addralign;           /* Section alignment */
 	Elf64_Xword   sh_entsize;             /* Entry size if section holds table */
 } Elf64_Shdr;
+
+/* Legal values for p_type (program type).  */
+#define PT_NULL 0
+#define PT_LOAD 1
+#define PT_DYNAMIC 2
+#define PT_INTERP 3
+#define PT_NOTE 4
+#define PT_SHLIB 5
+#define PT_PHDR 6
+#define PT_TLS 7
 
 /* Legal values for sh_type (section type).  */
 #define SHT_NULL          0             /* Section header table entry unused */
