@@ -59,6 +59,8 @@ along with termux-elf-cleaner.  If not, see
 #define SUPPORTED_DT_FLAGS_1 (DF_1_NOW | DF_1_GLOBAL | DF_1_NODELETE)
 #endif
 
+bool quiet = false;
+
 static char const *const usage_message[] =
 { "\
 \n\
@@ -67,6 +69,7 @@ dynamic section entries which the Android linker warns about.\n\
 \n\
 Options:\n\
 \n\
+--quiet               do not print info about removed entries\n\
 --help                display this help and exit\n\
 --version             output version information and exit\n"
 };
@@ -141,8 +144,9 @@ bool process_elf(uint8_t* bytes, size_t elf_file_size, char const* file_name)
 #endif
 				}
 				if (removed_name != nullptr) {
-					printf("%s: Removing the %s dynamic section entry from '%s'\n",
-					       PACKAGE_NAME, removed_name, file_name);
+					if (!quiet)
+						printf("%s: Removing the %s dynamic section entry from '%s'\n",
+						       PACKAGE_NAME, removed_name, file_name);
 					// Tag the entry with DT_NULL and put it last:
 					dynamic_section_entry->d_tag = DT_NULL;
 					// Decrease j to process new entry index:
@@ -154,11 +158,12 @@ bool process_elf(uint8_t* bytes, size_t elf_file_size, char const* file_name)
 					decltype(dynamic_section_entry->d_un.d_val) new_d_val =
 						(orig_d_val & SUPPORTED_DT_FLAGS_1);
 					if (new_d_val != orig_d_val) {
-						printf("%s: Replacing unsupported DF_1_* flags %llu with %llu in '%s'\n",
-						       PACKAGE_NAME,
-						       (unsigned long long) orig_d_val,
-						       (unsigned long long) new_d_val,
-						       file_name);
+						if (!quiet)
+							printf("%s: Replacing unsupported DF_1_* flags %llu with %llu in '%s'\n",
+							       PACKAGE_NAME,
+							       (unsigned long long) orig_d_val,
+							       (unsigned long long) new_d_val,
+							       file_name);
 						dynamic_section_entry->d_un.d_val = new_d_val;
 					}
 				}
@@ -168,8 +173,9 @@ bool process_elf(uint8_t* bytes, size_t elf_file_size, char const* file_name)
 		else if (section_header_entry->sh_type == SHT_GNU_verdef ||
 			   section_header_entry->sh_type == SHT_GNU_verneed ||
 			   section_header_entry->sh_type == SHT_GNU_versym) {
-			printf("%s: Removing version section from '%s'\n",
-			       PACKAGE_NAME, file_name);
+			if (!quiet)
+				printf("%s: Removing version section from '%s'\n",
+				       PACKAGE_NAME, file_name);
 			section_header_entry->sh_type = SHT_NULL;
 		}
 #endif
@@ -199,6 +205,9 @@ int main(int argc, char **argv)
 			COPYRIGHT, PACKAGE_NAME, PACKAGE_NAME);
 		exit(0);
 	}
+
+	if (argmatch(argv, argc, "-quiet", "--quiet", 3, NULL, &skip_args))
+		quiet = true;
 
 	for (int i = skip_args+1; i < argc; i++) {
 		char const* file_name = argv[i];
