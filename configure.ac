@@ -35,6 +35,9 @@ copyright="Copyright (C) 2022 Termux."
 AC_DEFINE_UNQUOTED(COPYRIGHT, ["$copyright"],
   [Short copyright string for this version of termux-elf-cleaner.])
 
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_TESTDIR(tests)
+AM_MISSING_PROG([AUTOM4TE], [autom4te])
+
+AC_CONFIG_FILES([Makefile tests/Makefile tests/atlocal])
 
 AC_OUTPUT
