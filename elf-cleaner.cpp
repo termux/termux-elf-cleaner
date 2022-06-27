@@ -31,10 +31,6 @@ along with termux-elf-cleaner.  If not, see
 
 #include "arghandling.h"
 
-#ifndef __ANDROID_API__
-#define __ANDROID_API__ 21
-#endif
-
 // Include a local elf.h copy as not all platforms have it.
 #include "elf.h"
 
@@ -52,12 +48,9 @@ along with termux-elf-cleaner.  If not, see
 #define DF_1_GLOBAL	0x00000002	/* Set RTLD_GLOBAL for this object.  */
 #define DF_1_NODELETE	0x00000008	/* Set RTLD_NODELETE for this object.*/
 
-#if __ANDROID_API__ < 23
-#define SUPPORTED_DT_FLAGS_1 (DF_1_NOW | DF_1_GLOBAL)
-#else
-// The supported DT_FLAGS_1 values as of Android 6.0.
-#define SUPPORTED_DT_FLAGS_1 (DF_1_NOW | DF_1_GLOBAL | DF_1_NODELETE)
-#endif
+/* Default to api level 21 unless arg --api-level given  */
+uint8_t supported_dt_flags_1 = (DF_1_NOW | DF_1_GLOBAL);
+int api_level = 21;
 
 bool quiet = false;
 
@@ -69,6 +62,7 @@ dynamic section entries which the Android linker warns about.\n\
 \n\
 Options:\n\
 \n\
+--api-level NN        choose target api level, i.e. 21, 24, ..\n\
 --quiet               do not print info about removed entries\n\
 --help                display this help and exit\n\
 --version             output version information and exit\n"
@@ -118,30 +112,22 @@ bool process_elf(uint8_t* bytes, size_t elf_file_size, char const* file_name)
 					break;
 				}
 			}
-
 			for (unsigned int j = 0; j < dynamic_section_entries; j++) {
 				ElfDynamicSectionEntryType* dynamic_section_entry = dynamic_section + j;
+
 				char const* removed_name = nullptr;
 				switch (dynamic_section_entry->d_tag) {
-#if __ANDROID_API__ <= 21
-					case DT_GNU_HASH: removed_name = "DT_GNU_HASH"; break;
-#endif
-#if __ANDROID_API__ < 23
-					case DT_VERSYM: removed_name = "DT_VERSYM"; break;
-					case DT_VERNEEDED: removed_name = "DT_VERNEEDED"; break;
-					case DT_VERNEEDNUM: removed_name = "DT_VERNEEDNUM"; break;
-					case DT_VERDEF: removed_name = "DT_VERDEF"; break;
-					case DT_VERDEFNUM: removed_name = "DT_VERDEFNUM"; break;
-#endif
+					case DT_GNU_HASH: if (api_level <= 21) removed_name = "DT_GNU_HASH"; break;
+					case DT_VERSYM: if (api_level < 23) removed_name = "DT_VERSYM"; break;
+					case DT_VERNEEDED: if (api_level < 23) removed_name = "DT_VERNEEDED"; break;
+					case DT_VERNEEDNUM: if (api_level < 23) removed_name = "DT_VERNEEDNUM"; break;
+					case DT_VERDEF: if (api_level < 23) removed_name = "DT_VERDEF"; break;
+					case DT_VERDEFNUM: if (api_level < 23) removed_name = "DT_VERDEFNUM"; break;
 					case DT_RPATH: removed_name = "DT_RPATH"; break;
-#if __ANDROID_API__ < 24
-					case DT_RUNPATH: removed_name = "DT_RUNPATH"; break;
-#endif
-#if __ANDROID_API__ < 31
-					case DT_AARCH64_BTI_PLT: if(is_aarch64) removed_name = "DT_AARCH64_BTI_PLT"; break;
-					case DT_AARCH64_PAC_PLT: if(is_aarch64) removed_name = "DT_AARCH64_PAC_PLT"; break;
-					case DT_AARCH64_VARIANT_PCS: if(is_aarch64) removed_name = "DT_AARCH64_VARIANT_PCS"; break;
-#endif
+					case DT_RUNPATH: if (api_level < 24) removed_name = "DT_RUNPATH"; break;
+					case DT_AARCH64_BTI_PLT: if (is_aarch64 && api_level < 31) removed_name = "DT_AARCH64_BTI_PLT"; break;
+					case DT_AARCH64_PAC_PLT: if (is_aarch64 && api_level < 31) removed_name = "DT_AARCH64_PAC_PLT"; break;
+					case DT_AARCH64_VARIANT_PCS: if (is_aarch64 && api_level < 31) removed_name = "DT_AARCH64_VARIANT_PCS"; break;
 				}
 				if (removed_name != nullptr) {
 					if (!quiet)
@@ -156,7 +142,7 @@ bool process_elf(uint8_t* bytes, size_t elf_file_size, char const* file_name)
 					decltype(dynamic_section_entry->d_un.d_val) orig_d_val =
 						dynamic_section_entry->d_un.d_val;
 					decltype(dynamic_section_entry->d_un.d_val) new_d_val =
-						(orig_d_val & SUPPORTED_DT_FLAGS_1);
+						(orig_d_val & supported_dt_flags_1);
 					if (new_d_val != orig_d_val) {
 						if (!quiet)
 							printf("%s: Replacing unsupported DF_1_* flags %llu with %llu in '%s'\n",
@@ -169,16 +155,15 @@ bool process_elf(uint8_t* bytes, size_t elf_file_size, char const* file_name)
 				}
 			}
 		}
-#if __ANDROID_API__ < 23
-		else if (section_header_entry->sh_type == SHT_GNU_verdef ||
-			   section_header_entry->sh_type == SHT_GNU_verneed ||
-			   section_header_entry->sh_type == SHT_GNU_versym) {
+		else if (api_level < 23 &&
+			 (section_header_entry->sh_type == SHT_GNU_verdef ||
+			  section_header_entry->sh_type == SHT_GNU_verneed ||
+			  section_header_entry->sh_type == SHT_GNU_versym)) {
 			if (!quiet)
 				printf("%s: Removing version section from '%s'\n",
 				       PACKAGE_NAME, file_name);
 			section_header_entry->sh_type = SHT_NULL;
 		}
-#endif
 	}
 	return true;
 }
@@ -204,6 +189,14 @@ int main(int argc, char **argv)
 			"see the file named COPYING.\n"),
 			COPYRIGHT, PACKAGE_NAME, PACKAGE_NAME);
 		exit(0);
+	}
+
+
+	argmatch(argv, argc, "-api-level", "--api-level", 3, &api_level, &skip_args);
+
+	if (api_level >= 23) {
+		// The supported DT_FLAGS_1 values as of Android 6.0.
+		supported_dt_flags_1 = (DF_1_NOW | DF_1_GLOBAL | DF_1_NODELETE);
 	}
 
 	if (argmatch(argv, argc, "-quiet", "--quiet", 3, NULL, &skip_args))
