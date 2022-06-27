@@ -29,6 +29,8 @@ along with termux-elf-cleaner.  If not, see
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "arghandling.h"
+
 #ifndef __ANDROID_API__
 #define __ANDROID_API__ 21
 #endif
@@ -56,6 +58,17 @@ along with termux-elf-cleaner.  If not, see
 // The supported DT_FLAGS_1 values as of Android 6.0.
 #define SUPPORTED_DT_FLAGS_1 (DF_1_NOW | DF_1_GLOBAL | DF_1_NODELETE)
 #endif
+
+static char const *const usage_message[] =
+{ "\
+\n\
+Processes ELF files to remove unsupported section types and\n\
+dynamic section entries which the Android linker warns about.\n\
+\n\
+Options:\n\
+\n\
+--help                display this help and exit\n"
+};
 
 template<typename ElfHeaderType /*Elf{32,64}_Ehdr*/,
 	 typename ElfSectionHeaderType /*Elf{32,64}_Shdr*/,
@@ -162,17 +175,17 @@ bool process_elf(uint8_t* bytes, size_t elf_file_size, char const* file_name)
 }
 
 
-int main(int argc, char const** argv)
+int main(int argc, char **argv)
 {
-	if (argc < 2 || (argc == 2 && strcmp(argv[1], "-h")==0)) {
-		fprintf(stderr, "usage: %s <filenames>\n", argv[0]);
-		fprintf(stderr, "\nProcesses ELF files to remove unsupported section types\n"
-				"and dynamic section entries which the Android linker (API %d)\nwarns about.\n",
-				__ANDROID_API__);
-		return 1;
+	int skip_args = 0;
+	if (argc == 1 || argmatch(argv, argc, "-help", "--help", 3, NULL, &skip_args)) {
+		printf("Usage: %s [OPTION-OR-FILENAME]...\n", argv[0]);
+		for (unsigned int i = 0; i < ARRAYELTS(usage_message); i++)
+			fputs(usage_message[i], stdout);
+		exit(0);
 	}
 
-	for (int i = 1; i < argc; i++) {
+	for (int i = skip_args+1; i < argc; i++) {
 		char const* file_name = argv[i];
 		int fd = open(file_name, O_RDWR);
 		if (fd < 0) {
