@@ -67,7 +67,8 @@ dynamic section entries which the Android linker warns about.\n\
 \n\
 Options:\n\
 \n\
---help                display this help and exit\n"
+--help                display this help and exit\n\
+--version             output version information and exit\n"
 };
 
 template<typename ElfHeaderType /*Elf{32,64}_Ehdr*/,
@@ -182,6 +183,18 @@ int main(int argc, char **argv)
 		printf("Usage: %s [OPTION-OR-FILENAME]...\n", argv[0]);
 		for (unsigned int i = 0; i < ARRAYELTS(usage_message); i++)
 			fputs(usage_message[i], stdout);
+		exit(0);
+	}
+
+	if (argmatch(argv, argc, "-version", "--version", 3, NULL, &skip_args)) {
+		printf("%s %s\n", PACKAGE_NAME, PACKAGE_VERSION);
+		printf(("%s\n"
+			"%s comes with ABSOLUTELY NO WARRANTY.\n"
+			"You may redistribute copies of %s\n"
+			"under the terms of the GNU General Public License.\n"
+			"For more information about these matters, "
+			"see the file named COPYING.\n"),
+			COPYRIGHT, PACKAGE_NAME, PACKAGE_NAME);
 		exit(0);
 	}
 
