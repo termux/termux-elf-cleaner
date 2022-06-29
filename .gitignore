@@ -1,5 +1,5 @@
 # In case of in-src build:
-termux-elf-cleaner
+elf-cleaner
 # In case of out-of-src build in a directory build/:
 build/
 
