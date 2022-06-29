@@ -52,6 +52,7 @@ along with termux-elf-cleaner.  If not, see
 uint8_t supported_dt_flags_1 = (DF_1_NOW | DF_1_GLOBAL);
 int api_level = 21;
 
+bool dry_run = false;
 bool quiet = false;
 
 static char const *const usage_message[] =
@@ -63,6 +64,7 @@ dynamic section entries which the Android linker warns about.\n\
 Options:\n\
 \n\
 --api-level NN        choose target api level, i.e. 21, 24, ..\n\
+--dry-run             print info but but do not remove entries\n\
 --quiet               do not print info about removed entries\n\
 --help                display this help and exit\n\
 --version             output version information and exit\n"
@@ -134,7 +136,8 @@ bool process_elf(uint8_t* bytes, size_t elf_file_size, char const* file_name)
 						printf("%s: Removing the %s dynamic section entry from '%s'\n",
 						       PACKAGE_NAME, removed_name, file_name);
 					// Tag the entry with DT_NULL and put it last:
-					dynamic_section_entry->d_tag = DT_NULL;
+					if (!dry_run)
+						dynamic_section_entry->d_tag = DT_NULL;
 					// Decrease j to process new entry index:
 					std::swap(dynamic_section[j--], dynamic_section[last_nonnull_entry_idx--]);
 				} else if (dynamic_section_entry->d_tag == DT_FLAGS_1) {
@@ -150,7 +153,8 @@ bool process_elf(uint8_t* bytes, size_t elf_file_size, char const* file_name)
 							       (unsigned long long) orig_d_val,
 							       (unsigned long long) new_d_val,
 							       file_name);
-						dynamic_section_entry->d_un.d_val = new_d_val;
+						if (!dry_run)
+							dynamic_section_entry->d_un.d_val = new_d_val;
 					}
 				}
 			}
@@ -162,7 +166,8 @@ bool process_elf(uint8_t* bytes, size_t elf_file_size, char const* file_name)
 			if (!quiet)
 				printf("%s: Removing version section from '%s'\n",
 				       PACKAGE_NAME, file_name);
-			section_header_entry->sh_type = SHT_NULL;
+			if (!dry_run)
+				section_header_entry->sh_type = SHT_NULL;
 		}
 	}
 	return true;
@@ -191,13 +196,15 @@ int main(int argc, char **argv)
 		exit(0);
 	}
 
-
 	argmatch(argv, argc, "-api-level", "--api-level", 3, &api_level, &skip_args);
 
 	if (api_level >= 23) {
 		// The supported DT_FLAGS_1 values as of Android 6.0.
 		supported_dt_flags_1 = (DF_1_NOW | DF_1_GLOBAL | DF_1_NODELETE);
 	}
+
+	if (argmatch(argv, argc, "-dry-run", "--dry-run", 3, NULL, &skip_args))
+		dry_run = true;
 
 	if (argmatch(argv, argc, "-quiet", "--quiet", 3, NULL, &skip_args))
 		quiet = true;
