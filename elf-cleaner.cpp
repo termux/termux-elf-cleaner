@@ -77,16 +77,16 @@ template<typename ElfHeaderType /*Elf{32,64}_Ehdr*/,
 bool process_elf(uint8_t* bytes, size_t elf_file_size, char const* file_name)
 {
 	if (sizeof(ElfSectionHeaderType) > elf_file_size) {
-		fprintf(stderr, "elf-cleaner: Elf header for '%s' would end at %zu but file size only %zu\n",
-			file_name, sizeof(ElfSectionHeaderType), elf_file_size);
+		fprintf(stderr, "%s: Elf header for '%s' would end at %zu but file size only %zu\n",
+			PACKAGE_NAME, file_name, sizeof(ElfSectionHeaderType), elf_file_size);
 		return false;
 	}
 	ElfHeaderType* elf_hdr = reinterpret_cast<ElfHeaderType*>(bytes);
 
 	size_t last_section_header_byte = elf_hdr->e_shoff + sizeof(ElfSectionHeaderType) * elf_hdr->e_shnum;
 	if (last_section_header_byte > elf_file_size) {
-		fprintf(stderr, "elf-cleaner: Section header for '%s' would end at %zu but file size only %zu\n",
-			file_name, last_section_header_byte, elf_file_size);
+		fprintf(stderr, "%s: Section header for '%s' would end at %zu but file size only %zu\n",
+			PACKAGE_NAME, file_name, last_section_header_byte, elf_file_size);
 		return false;
 	}
 	ElfSectionHeaderType* section_header_table = reinterpret_cast<ElfSectionHeaderType*>(bytes + elf_hdr->e_shoff);
@@ -98,8 +98,8 @@ bool process_elf(uint8_t* bytes, size_t elf_file_size, char const* file_name)
 		if (section_header_entry->sh_type == SHT_DYNAMIC) {
 			size_t const last_dynamic_section_byte = section_header_entry->sh_offset + section_header_entry->sh_size;
 			if (last_dynamic_section_byte > elf_file_size) {
-				fprintf(stderr, "elf-cleaner: Dynamic section for '%s' would end at %zu but file size only %zu\n",
-					file_name, last_dynamic_section_byte, elf_file_size);
+				fprintf(stderr, "%s: Dynamic section for '%s' would end at %zu but file size only %zu\n",
+					PACKAGE_NAME, file_name, last_dynamic_section_byte, elf_file_size);
 				return false;
 			}
 
@@ -141,8 +141,8 @@ bool process_elf(uint8_t* bytes, size_t elf_file_size, char const* file_name)
 #endif
 				}
 				if (removed_name != nullptr) {
-					printf("elf-cleaner: Removing the %s dynamic section entry from '%s'\n",
-					       removed_name, file_name);
+					printf("%s: Removing the %s dynamic section entry from '%s'\n",
+					       PACKAGE_NAME, removed_name, file_name);
 					// Tag the entry with DT_NULL and put it last:
 					dynamic_section_entry->d_tag = DT_NULL;
 					// Decrease j to process new entry index:
@@ -154,7 +154,8 @@ bool process_elf(uint8_t* bytes, size_t elf_file_size, char const* file_name)
 					decltype(dynamic_section_entry->d_un.d_val) new_d_val =
 						(orig_d_val & SUPPORTED_DT_FLAGS_1);
 					if (new_d_val != orig_d_val) {
-						printf("elf-cleaner: Replacing unsupported DF_1_* flags %llu with %llu in '%s'\n",
+						printf("%s: Replacing unsupported DF_1_* flags %llu with %llu in '%s'\n",
+						       PACKAGE_NAME,
 						       (unsigned long long) orig_d_val,
 						       (unsigned long long) new_d_val,
 						       file_name);
@@ -167,7 +168,8 @@ bool process_elf(uint8_t* bytes, size_t elf_file_size, char const* file_name)
 		else if (section_header_entry->sh_type == SHT_GNU_verdef ||
 			   section_header_entry->sh_type == SHT_GNU_verneed ||
 			   section_header_entry->sh_type == SHT_GNU_versym) {
-			printf("elf-cleaner: Removing version section from '%s'\n", file_name);
+			printf("%s: Removing version section from '%s'\n",
+			       PACKAGE_NAME, file_name);
 			section_header_entry->sh_type = SHT_NULL;
 		}
 #endif
@@ -229,7 +231,8 @@ int main(int argc, char **argv)
 		}
 
 		if (bytes[/*EI_DATA*/5] != 1) {
-			fprintf(stderr, "elf-cleaner: Not little endianness in '%s'\n", file_name);
+			fprintf(stderr, "%s: Not little endianness in '%s'\n",
+			        PACKAGE_NAME, file_name);
 			munmap(mem, st.st_size);
 			close(fd);
 			continue;
@@ -243,7 +246,8 @@ int main(int argc, char **argv)
 			if (!process_elf<Elf64_Ehdr, Elf64_Shdr, Elf64_Dyn>(bytes, st.st_size, file_name))
 				return 1;
 		} else {
-			fprintf(stderr, "elf-cleaner: Incorrect bit value %d in '%s'\n", bit_value, file_name);
+			fprintf(stderr, "%s: Incorrect bit value %d in '%s'\n",
+			        PACKAGE_NAME, bit_value, file_name);
 			return 1;
 		}
 
