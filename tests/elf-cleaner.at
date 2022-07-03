@@ -24,4 +24,6 @@ AT_INIT
 AT_TESTED([elf-cleaner])
 AT_COLOR_TESTS
 
+m4_include([api-21.at])
+
 m4_include([api-24.at])
