@@ -24,15 +24,21 @@ It also removes the three ELF sections of type:
 - `SHT_GNU_versym`
 
 ## Usage
+
 ```sh
-usage: termux-elf-cleaner <filenames>
+Usage: termux-elf-cleaner [OPTION-OR-FILENAME]...
 
 Processes ELF files to remove unsupported section types and
 dynamic section entries which the Android linker warns about.
-```
 
-## Author
-Fredrik Fornwall ([@fornwall](https://github.com/fornwall)).
+Options:
+
+--api-level NN        choose target api level, i.e. 21, 24, ..
+--dry-run             print info but but do not remove entries
+--quiet               do not print info about removed entries
+--help                display this help and exit
+--version             output version information and exit
+```
 
 ## License
 
