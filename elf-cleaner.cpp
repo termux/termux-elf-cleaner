@@ -147,7 +147,7 @@ bool process_elf(uint8_t* bytes, size_t elf_file_size, char const* file_name)
 
 				char const* removed_name = nullptr;
 				switch (dynamic_section_entry->d_tag) {
-					case DT_GNU_HASH: if (api_level <= 21) removed_name = "DT_GNU_HASH"; break;
+					case DT_GNU_HASH: if (api_level < 23) removed_name = "DT_GNU_HASH"; break;
 					case DT_VERSYM: if (api_level < 23) removed_name = "DT_VERSYM"; break;
 					case DT_VERNEEDED: if (api_level < 23) removed_name = "DT_VERNEEDED"; break;
 					case DT_VERNEEDNUM: if (api_level < 23) removed_name = "DT_VERNEEDNUM"; break;
