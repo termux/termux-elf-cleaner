@@ -30,7 +30,7 @@ jobs:
           mkdir build && cd build
           ../configure --program-prefix termux-
           make
-      - name: Attach APKs to release
+      - name: Attach termux-elf-claner to release
         run: >-
           hub release edit
           -m ""
