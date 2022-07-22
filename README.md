@@ -37,7 +37,7 @@ error: "valgrind": executable's TLS segment is underaligned: alignment is 8, nee
 
 ## Usage
 
-```sh
+```
 Usage: termux-elf-cleaner [OPTION-OR-FILENAME]...
 
 Processes ELF files to remove unsupported section types and
