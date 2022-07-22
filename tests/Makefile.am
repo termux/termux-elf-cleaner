@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+TESTSUITE_FRAGMENTS = api-21.at api-24.at tls-alignment.at elf-cleaner.at
 
 EXTRA_DIST = $(TESTSUITE_AT) testsuite package.m4
 
@@ -46,7 +47,7 @@ TESTSUITE_AT = elf-cleaner.at
 TESTSUITE = $(srcdir)/testsuite
 
 AUTOTEST = $(AUTOM4TE) --language=autotest
-$(TESTSUITE): package.m4 $(TESTSUITE_AT)
+$(TESTSUITE): package.m4 $(TESTSUITE_FRAGMENTS) $(TESTSUITE_AT)
 	$(AUTOTEST) -I$(srcdir) $(TESTSUITE_AT) -o $@.tmp
 	mv $@.tmp $@
 
