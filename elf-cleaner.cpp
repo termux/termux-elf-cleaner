@@ -71,7 +71,7 @@ Options:\n\
 };
 
 template<typename ElfWord /*Elf{32_Word,64_Xword}*/,
-         typename ElfHeaderType /*Elf{32,64}_Ehdr*/,
+	 typename ElfHeaderType /*Elf{32,64}_Ehdr*/,
 	 typename ElfSectionHeaderType /*Elf{32,64}_Shdr*/,
 	 typename ElfProgramHeaderType /*Elf{32,64}_Phdr*/,
 	 typename ElfDynamicSectionEntryType /* Elf{32,64}_Dyn */>
@@ -260,7 +260,8 @@ int main(int argc, char **argv)
 		if (mem == MAP_FAILED) { perror("mmap()"); return 1; }
 
 		uint8_t* bytes = reinterpret_cast<uint8_t*>(mem);
-		if (!(bytes[0] == 0x7F && bytes[1] == 'E' && bytes[2] == 'L' && bytes[3] == 'F')) {
+		if (!(bytes[0] == 0x7F && bytes[1] == 'E' &&
+		      bytes[2] == 'L' && bytes[3] == 'F')) {
 			// Not the ELF magic number.
 			munmap(mem, st.st_size);
 			close(fd);
@@ -269,7 +270,7 @@ int main(int argc, char **argv)
 
 		if (bytes[/*EI_DATA*/5] != 1) {
 			fprintf(stderr, "%s: Not little endianness in '%s'\n",
-			        PACKAGE_NAME, file_name);
+				PACKAGE_NAME, file_name);
 			munmap(mem, st.st_size);
 			close(fd);
 			continue;
@@ -277,14 +278,16 @@ int main(int argc, char **argv)
 
 		uint8_t const bit_value = bytes[/*EI_CLASS*/4];
 		if (bit_value == 1) {
-			if (!process_elf<Elf32_Word, Elf32_Ehdr, Elf32_Shdr, Elf32_Phdr, Elf32_Dyn>(bytes, st.st_size, file_name))
+			if (!process_elf<Elf32_Word, Elf32_Ehdr, Elf32_Shdr,
+			    Elf32_Phdr, Elf32_Dyn>(bytes, st.st_size, file_name))
 				return 1;
 		} else if (bit_value == 2) {
-			if (!process_elf<Elf64_Xword, Elf64_Ehdr, Elf64_Shdr, Elf64_Phdr, Elf64_Dyn>(bytes, st.st_size, file_name))
+			if (!process_elf<Elf64_Xword, Elf64_Ehdr, Elf64_Shdr,
+			    Elf64_Phdr, Elf64_Dyn>(bytes, st.st_size, file_name))
 				return 1;
 		} else {
 			fprintf(stderr, "%s: Incorrect bit value %d in '%s'\n",
-			        PACKAGE_NAME, bit_value, file_name);
+				PACKAGE_NAME, bit_value, file_name);
 			return 1;
 		}
 
