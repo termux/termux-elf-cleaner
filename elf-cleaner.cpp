@@ -201,6 +201,103 @@ bool process_elf(uint8_t* bytes, size_t elf_file_size, char const* file_name)
 	return true;
 }
 
+int parse_file(const char *file_name)
+{
+	int fd = open(file_name, O_RDWR);
+	if (fd < 0) {
+		char* error_message;
+		if (asprintf(&error_message, "open(\"%s\")", file_name) == -1)
+			error_message = (char*) "open()";
+		perror(error_message);
+		return 1;
+	}
+
+	struct stat st;
+	if (fstat(fd, &st) < 0) {
+		perror("fstat()");
+		if (close(fd) != 0)
+			perror("close()");
+		return 1;
+	}
+
+	if (st.st_size < (long long) sizeof(Elf32_Ehdr)) {
+		if (close(fd) != 0) {
+			perror("close()");
+			return 1;
+		}
+		return 0;
+	}
+
+	void* mem = mmap(0, st.st_size, PROT_READ | PROT_WRITE,
+			 MAP_SHARED, fd, 0);
+	if (mem == MAP_FAILED) {
+		perror("mmap()");
+		if (close(fd) != 0)
+			perror("close()");
+		return 1;
+	}
+
+	uint8_t* bytes = reinterpret_cast<uint8_t*>(mem);
+	if (!(bytes[0] == 0x7F && bytes[1] == 'E' &&
+	      bytes[2] == 'L' && bytes[3] == 'F')) {
+		// Not the ELF magic number.
+		munmap(mem, st.st_size);
+		if (close(fd) != 0) {
+			perror("close()");
+			return 1;
+		}
+		return 0;
+	}
+
+	if (bytes[/*EI_DATA*/5] != 1) {
+		fprintf(stderr, "%s: Not little endianness in '%s'\n",
+			PACKAGE_NAME, file_name);
+		munmap(mem, st.st_size);
+		if (close(fd) != 0) {
+			perror("close()");
+			return 1;
+		}
+		return 0;
+	}
+
+	uint8_t const bit_value = bytes[/*EI_CLASS*/4];
+	if (bit_value == 1) {
+		if (!process_elf<Elf32_Word, Elf32_Ehdr, Elf32_Shdr, Elf32_Phdr,
+		    Elf32_Dyn>(bytes, st.st_size, file_name)) {
+			munmap(mem, st.st_size);
+			if (close(fd) != 0)
+				perror("close()");
+			return 1;
+		}
+	} else if (bit_value == 2) {
+		if (!process_elf<Elf64_Xword, Elf64_Ehdr, Elf64_Shdr,
+		    Elf64_Phdr, Elf64_Dyn>(bytes, st.st_size, file_name)) {
+			munmap(mem, st.st_size);
+			if (close(fd) != 0)
+				perror("close()");
+			return 1;
+		}
+	} else {
+		fprintf(stderr, "%s: Incorrect bit value %d in '%s'\n",
+			PACKAGE_NAME, bit_value, file_name);
+		munmap(mem, st.st_size);
+		if (close(fd) != 0)
+			perror("close()");
+		return 1;
+	}
+
+	if (msync(mem, st.st_size, MS_SYNC) < 0) {
+		perror("msync()");
+		munmap(mem, st.st_size);
+		if (close(fd) != 0)
+			perror("close()");
+		return 1;
+	}
+
+	munmap(mem, st.st_size);
+	close(fd);
+	return 0;
+}
 
 int main(int argc, char **argv)
 {
@@ -238,97 +335,8 @@ int main(int argc, char **argv)
 		quiet = true;
 
 	for (int i = skip_args+1; i < argc; i++) {
-		char const* file_name = argv[i];
-		int fd = open(file_name, O_RDWR);
-		if (fd < 0) {
-			char* error_message;
-			if (asprintf(&error_message, "open(\"%s\")", file_name) == -1)
-				error_message = (char*) "open()";
-			perror(error_message);
+		if (parse_file(argv[i]) != 0)
 			return 1;
-		}
-
-		struct stat st;
-		if (fstat(fd, &st) < 0) {
-			perror("fstat()");
-			if (close(fd) != 0)
-				perror("close()");
-			return 1;
-		}
-
-		if (st.st_size < (long long) sizeof(Elf32_Ehdr)) {
-			if (close(fd) != 0) {
-				perror("close()");
-				return 1;
-			}
-			continue;
-		}
-
-		void* mem = mmap(0, st.st_size, PROT_READ | PROT_WRITE,
-				 MAP_SHARED, fd, 0);
-		if (mem == MAP_FAILED) {
-			perror("mmap()");
-			if (close(fd) != 0)
-				perror("close()");
-			return 1;
-		}
-
-		uint8_t* bytes = reinterpret_cast<uint8_t*>(mem);
-		if (!(bytes[0] == 0x7F && bytes[1] == 'E' &&
-		      bytes[2] == 'L' && bytes[3] == 'F')) {
-			// Not the ELF magic number.
-			munmap(mem, st.st_size);
-			if (close(fd) != 0) {
-				perror("close()");
-				return 1;
-			}
-			continue;
-		}
-
-		if (bytes[/*EI_DATA*/5] != 1) {
-			fprintf(stderr, "%s: Not little endianness in '%s'\n",
-				PACKAGE_NAME, file_name);
-			munmap(mem, st.st_size);
-			if (close(fd) != 0) {
-				perror("close()");
-				return 1;
-			}
-			continue;
-		}
-
-		uint8_t const bit_value = bytes[/*EI_CLASS*/4];
-		if (bit_value == 1) {
-			if (!process_elf<Elf32_Word, Elf32_Ehdr, Elf32_Shdr,
-			    Elf32_Phdr, Elf32_Dyn>(bytes, st.st_size, file_name)) {
-				if (close(fd) != 0)
-					perror("close()");
-				return 1;
-			}
-		} else if (bit_value == 2) {
-			if (!process_elf<Elf64_Xword, Elf64_Ehdr, Elf64_Shdr,
-			    Elf64_Phdr, Elf64_Dyn>(bytes, st.st_size, file_name)) {
-				if (close(fd) != 0)
-					perror("close()");
-				return 1;
-			}
-		} else {
-			fprintf(stderr, "%s: Incorrect bit value %d in '%s'\n",
-				PACKAGE_NAME, bit_value, file_name);
-			if (close(fd) != 0)
-				perror("close()");
-			return 1;
-		}
-
-		if (msync(mem, st.st_size, MS_SYNC) < 0) {
-			perror("msync()");
-			if (close(fd) != 0)
-				perror("close()");
-			return 1;
-		}
-
-		munmap(mem, st.st_size);
-		if (close(fd) != 0)
-			perror("close()");
 	}
 	return 0;
 }
