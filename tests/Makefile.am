@@ -54,7 +54,7 @@ $(TESTSUITE): package.m4 $(TESTSUITE_FRAGMENTS) $(TESTSUITE_AT)
 clean-local:
 	test ! -f $(TESTSUITE) || $(SHELL) $(TESTSUITE) --clean
 
-check-local: $(TESTSUITE)
+check-local: $(TESTSUITE) atlocal
 	$(SHELL) $(TESTSUITE) $(TESTSUITEFLAGS)
 
 check-full:
