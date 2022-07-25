@@ -28,7 +28,7 @@ jobs:
         run: |
           autoreconf -vfi
           mkdir build && cd build
-          ../configure --program-prefix termux-
+          ../configure
           make
       - name: Attach termux-elf-claner to release
         run: >-

@@ -27,7 +27,7 @@ AT_BANNER([API level 24])
 AT_SETUP([aarch64])
 AT_KEYWORDS([dynamic-section api-24 aarch64])
 AT_CHECK([cp ${top_srcdir}/tests/curl-7.83.1-aarch64-original .
-elf-cleaner --api-level 24 curl-7.83.1-aarch64-original],
+termux-elf-cleaner --api-level 24 curl-7.83.1-aarch64-original],
 [0],
 [AT_PACKAGE_NAME: Replacing unsupported DF_1_* flags 134217737 with 9 in 'curl-7.83.1-aarch64-original'
 ])
@@ -41,7 +41,7 @@ AT_CLEANUP
 AT_SETUP([arm])
 AT_KEYWORDS([dynamic-section api-24 arm])
 AT_CHECK([cp ${top_srcdir}/tests/curl-7.83.1-arm-original .
-elf-cleaner --api-level 24 curl-7.83.1-arm-original],
+termux-elf-cleaner --api-level 24 curl-7.83.1-arm-original],
 [0],
 [AT_PACKAGE_NAME: Replacing unsupported DF_1_* flags 134217737 with 9 in 'curl-7.83.1-arm-original'
 ])
@@ -55,7 +55,7 @@ AT_CLEANUP
 AT_SETUP([i686])
 AT_KEYWORDS([dynamic-section api-24 i686])
 AT_CHECK([cp ${top_srcdir}/tests/curl-7.83.1-i686-original .
-elf-cleaner --api-level 24 curl-7.83.1-i686-original],
+termux-elf-cleaner --api-level 24 curl-7.83.1-i686-original],
 [0],
 [AT_PACKAGE_NAME: Replacing unsupported DF_1_* flags 134217737 with 9 in 'curl-7.83.1-i686-original'
 ])
@@ -69,7 +69,7 @@ AT_CLEANUP
 AT_SETUP([x86_64])
 AT_KEYWORDS([dynamic-section api-24 x86_64])
 AT_CHECK([cp ${top_srcdir}/tests/curl-7.83.1-x86_64-original .
-elf-cleaner --api-level 24 curl-7.83.1-x86_64-original],
+termux-elf-cleaner --api-level 24 curl-7.83.1-x86_64-original],
 [0],
 [AT_PACKAGE_NAME: Replacing unsupported DF_1_* flags 134217737 with 9 in 'curl-7.83.1-x86_64-original'
 ])
