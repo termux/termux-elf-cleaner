@@ -29,14 +29,14 @@ CLEANFILES =
 ## package.m4.  ##
 ## ------------ ##
 
-$(srcdir)/package.m4: $(top_srcdir)/configure.ac
+$(builddir)/package.m4: $(top_srcdir)/configure.ac
 	{                                      \
 	  echo '# Signature of the current package.'; \
 	  echo 'm4_define([AT_PACKAGE_NAME],      [@PACKAGE_NAME@])'; \
 	  echo 'm4_define([AT_PACKAGE_VERSION],   [@PACKAGE_VERSION@])'; \
 	  echo 'm4_define([AT_PACKAGE_STRING],    [@PACKAGE_STRING@])'; \
 	  echo 'm4_define([AT_PACKAGE_BUGREPORT], [@PACKAGE_BUGREPORT@])'; \
-	} >$(srcdir)/package.m4
+	} >$(builddir)/package.m4
 
 ## ------------ ##
 ## Test suite.  ##
@@ -44,7 +44,7 @@ $(srcdir)/package.m4: $(top_srcdir)/configure.ac
 
 TESTSUITE_AT = elf-cleaner.at
 
-TESTSUITE = $(srcdir)/testsuite
+TESTSUITE = $(builddir)/testsuite
 
 AUTOTEST = $(AUTOM4TE) --language=autotest
 $(TESTSUITE): package.m4 $(TESTSUITE_FRAGMENTS) $(TESTSUITE_AT)
