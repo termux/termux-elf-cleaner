@@ -31,6 +31,10 @@ AC_PROG_CC
 AC_PROG_CXX
 AC_LANG(C++)
 
+AC_CONFIG_MACRO_DIR([m4])
+
+AX_PTHREAD
+
 copyright="Copyright (C) 2022 Termux."
 AC_DEFINE_UNQUOTED(COPYRIGHT, ["$copyright"],
   [Short copyright string for this version of termux-elf-cleaner.])

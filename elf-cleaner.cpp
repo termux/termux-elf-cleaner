@@ -21,6 +21,7 @@ along with termux-elf-cleaner.  If not, see
 
 #include <algorithm>
 #include <fcntl.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -28,9 +29,10 @@ along with termux-elf-cleaner.  If not, see
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <vector>
 
 #include "arghandling.h"
-
+#include "cpucount.h"
 // Include a local elf.h copy as not all platforms have it.
 #include "elf.h"
 
@@ -55,6 +57,11 @@ int api_level = 21;
 bool dry_run = false;
 bool quiet = false;
 
+struct thread_data {
+	int argc = 0;
+	char **argv;
+};
+
 static char const *const usage_message[] =
 { "\
 \n\
@@ -65,6 +72,7 @@ Options:\n\
 \n\
 --api-level NN        choose target api level, i.e. 21, 24, ..\n\
 --dry-run             print info but but do not remove entries\n\
+--jobs N              allow N jobs, defaults to $(ncproc)\n\
 --quiet               do not print info about removed entries\n\
 --help                display this help and exit\n\
 --version             output version information and exit\n"
@@ -299,6 +307,18 @@ int parse_file(const char *file_name)
 	return 0;
 }
 
+void *file_parse_loop(void *td)
+{
+	struct thread_data *data = (struct thread_data *) td;
+	for (int i = 0; i < data->argc; i++) {
+		char *file_name = (*data).argv[i];
+		int ret = parse_file(file_name);
+		if (ret != 0)
+			break;
+	}
+	return NULL;
+}
+
 int main(int argc, char **argv)
 {
 	int skip_args = 0;
@@ -328,15 +348,50 @@ int main(int argc, char **argv)
 		supported_dt_flags_1 = (DF_1_NOW | DF_1_GLOBAL | DF_1_NODELETE);
 	}
 
+	int num_threads = cpucount();
+	argmatch(argv, argc, "-jobs", "--jobs", 1, &num_threads, &skip_args);
+	if (num_threads <= 0)
+		num_threads = 1;
+
 	if (argmatch(argv, argc, "-dry-run", "--dry-run", 3, NULL, &skip_args))
 		dry_run = true;
 
 	if (argmatch(argv, argc, "-quiet", "--quiet", 3, NULL, &skip_args))
 		quiet = true;
 
-	for (int i = skip_args+1; i < argc; i++) {
-		if (parse_file(argv[i]) != 0)
-			return 1;
+	std::vector<pthread_t> thread(num_threads);
+	std::vector<struct thread_data> data(num_threads);
+	int num_files = argc - (skip_args+1);
+	/* Tasks per thread, rounded down */
+	int tasks_per_thread = (num_files / num_threads);
+
+	for (int i = 0; i<num_threads; i++) {
+		if (i < num_files % num_threads) {
+			/* Distribute 'extra' jobs (since we rounded
+			   down tasks_per_thread) */
+			data[i].argv = &argv[skip_args+1];
+			data[i].argc = tasks_per_thread + 1;
+			skip_args += tasks_per_thread + 1;
+		} else {
+			data[i].argv = &argv[skip_args+1];
+			data[i].argc = tasks_per_thread;
+			skip_args += tasks_per_thread;
+		}
 	}
+
+	/* Launch Threads */
+	for (int i = 0; i<num_threads; i++) {
+		if (data[i].argc == 0)
+			break;
+		pthread_create(&thread[i], NULL, &file_parse_loop, &data[i]);
+	}
+
+	/* Wait for Threads to Finish */
+	for (int i = 0; i<num_threads; i++) {
+		if (data[i].argc == 0)
+			break;
+		pthread_join(thread[i], NULL);
+	}
+
 	return 0;
 }

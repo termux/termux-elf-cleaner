@@ -56,6 +56,8 @@ Options:
 
 SPDX-License-Identifier: [GPL-3.0-or-later](https://spdx.org/licenses/GPL-3.0-or-later.html)
 
+License is GPL-3.0-or-later in all source files unless specified otherwise in file header. 
+
 ## See also
 
 * [Bionic's related docs](https://android.googlesource.com/platform/bionic/+/refs/heads/master/android-changes-for-ndk-developers.md)
