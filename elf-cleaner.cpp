@@ -249,22 +249,39 @@ int main(int argc, char **argv)
 		}
 
 		struct stat st;
-		if (fstat(fd, &st) < 0) { perror("fstat()"); return 1; }
+		if (fstat(fd, &st) < 0) {
+			perror("fstat()");
+			if (close(fd) != 0)
+				perror("close()");
+			return 1;
+		}
 
 		if (st.st_size < (long long) sizeof(Elf32_Ehdr)) {
-			close(fd);
+			if (close(fd) != 0) {
+				perror("close()");
+				return 1;
+			}
 			continue;
 		}
 
-		void* mem = mmap(0, st.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-		if (mem == MAP_FAILED) { perror("mmap()"); return 1; }
+		void* mem = mmap(0, st.st_size, PROT_READ | PROT_WRITE,
+				 MAP_SHARED, fd, 0);
+		if (mem == MAP_FAILED) {
+			perror("mmap()");
+			if (close(fd) != 0)
+				perror("close()");
+			return 1;
+		}
 
 		uint8_t* bytes = reinterpret_cast<uint8_t*>(mem);
 		if (!(bytes[0] == 0x7F && bytes[1] == 'E' &&
 		      bytes[2] == 'L' && bytes[3] == 'F')) {
 			// Not the ELF magic number.
 			munmap(mem, st.st_size);
-			close(fd);
+			if (close(fd) != 0) {
+				perror("close()");
+				return 1;
+			}
 			continue;
 		}
 
@@ -272,32 +289,46 @@ int main(int argc, char **argv)
 			fprintf(stderr, "%s: Not little endianness in '%s'\n",
 				PACKAGE_NAME, file_name);
 			munmap(mem, st.st_size);
-			close(fd);
+			if (close(fd) != 0) {
+				perror("close()");
+				return 1;
+			}
 			continue;
 		}
 
 		uint8_t const bit_value = bytes[/*EI_CLASS*/4];
 		if (bit_value == 1) {
 			if (!process_elf<Elf32_Word, Elf32_Ehdr, Elf32_Shdr,
-			    Elf32_Phdr, Elf32_Dyn>(bytes, st.st_size, file_name))
+			    Elf32_Phdr, Elf32_Dyn>(bytes, st.st_size, file_name)) {
+				if (close(fd) != 0)
+					perror("close()");
 				return 1;
+			}
 		} else if (bit_value == 2) {
 			if (!process_elf<Elf64_Xword, Elf64_Ehdr, Elf64_Shdr,
-			    Elf64_Phdr, Elf64_Dyn>(bytes, st.st_size, file_name))
+			    Elf64_Phdr, Elf64_Dyn>(bytes, st.st_size, file_name)) {
+				if (close(fd) != 0)
+					perror("close()");
 				return 1;
+			}
 		} else {
 			fprintf(stderr, "%s: Incorrect bit value %d in '%s'\n",
 				PACKAGE_NAME, bit_value, file_name);
+			if (close(fd) != 0)
+				perror("close()");
 			return 1;
 		}
 
 		if (msync(mem, st.st_size, MS_SYNC) < 0) {
 			perror("msync()");
+			if (close(fd) != 0)
+				perror("close()");
 			return 1;
 		}
 
 		munmap(mem, st.st_size);
-		close(fd);
+		if (close(fd) != 0)
+			perror("close()");
 	}
 	return 0;
 }
