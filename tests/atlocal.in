@@ -1,5 +1,5 @@
 # @configure_input@                                     -*- shell-script -*-
-# Configurable variable values for tar test suite.
+# Configurable variable values for termux-elf-cleaner test suite.
 # Copyright 2022 Termux
 
 # This file is part of termux-elf-cleaner.
