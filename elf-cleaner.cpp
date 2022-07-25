@@ -209,7 +209,7 @@ int main(int argc, char **argv)
 		printf("Usage: %s [OPTION-OR-FILENAME]...\n", argv[0]);
 		for (unsigned int i = 0; i < ARRAYELTS(usage_message); i++)
 			fputs(usage_message[i], stdout);
-		exit(0);
+		return 0;
 	}
 
 	if (argmatch(argv, argc, "-version", "--version", 3, NULL, &skip_args)) {
@@ -221,7 +221,7 @@ int main(int argc, char **argv)
 			"For more information about these matters, "
 			"see the file named COPYING.\n"),
 			COPYRIGHT, PACKAGE_NAME, PACKAGE_NAME);
-		exit(0);
+		return 0;
 	}
 
 	argmatch(argv, argc, "-api-level", "--api-level", 3, &api_level, &skip_args);
