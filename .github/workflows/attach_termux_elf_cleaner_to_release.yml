@@ -22,15 +22,13 @@ jobs:
             echo "The versionName '${RELEASE_VERSION_NAME/v/}' is not a valid version as per semantic version '2.0.0' spec in the format 'major.minor.patch(-prerelease)(+buildmetadata)'. https://semver.org/spec/v2.0.0.html."
             exit 1
           fi
-      - name: Echo release
-        run: echo "Attaching termux-elf-cleaner to '${{ env.RELEASE_VERSION_NAME }}' release"
       - name: Build
         run: |
           autoreconf -vfi
           mkdir build && cd build
           ../configure
           make
-      - name: Attach termux-elf-claner to release
+      - name: Attach termux-elf-cleaner to release
         run: >-
           hub release edit
           -m ""
