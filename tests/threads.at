@@ -19,15 +19,21 @@
 # along with this program.  If not, see
 # <http://www.gnu.org/licenses/>.
 
+# Ensure that termux-elf-cleaner can run on several threads
 
-AT_INIT
-AT_TESTED([termux-elf-cleaner])
-AT_COLOR_TESTS
+AT_BANNER([Multiple threads])
 
-m4_include([api-21.at])
-
-m4_include([api-24.at])
-
-m4_include([tls-alignment.at])
-
-m4_include([threads.at])
+AT_SETUP([Parallel on 100 files])
+AT_KEYWORDS([dynamic-section api-24 aarch64])
+AT_CHECK([
+for i in $(seq 1 100); do
+  cp ${top_srcdir}/tests/curl-7.83.1-aarch64-original curl-7.83.1-aarch64-original-$i
+done
+${abs_top_builddir}/termux-elf-cleaner --api-level 24 --jobs 4 --quiet curl-7.83.1-aarch64-original-*
+for i in $(seq 1 100); do
+  cmp --silent curl-7.83.1-aarch64-original-$i ${top_srcdir}/tests/curl-7.83.1-aarch64-api24-cleaned
+done
+],
+[0],
+[])
+AT_CLEANUP

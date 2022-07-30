@@ -17,7 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-TESTSUITE_FRAGMENTS = api-21.at api-24.at tls-alignment.at elf-cleaner.at
+TESTSUITE_FRAGMENTS = api-21.at api-24.at tls-alignment.at	\
+elf-cleaner.at threads.at
 
 EXTRA_DIST = $(TESTSUITE_AT) testsuite package.m4
 
