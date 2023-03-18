@@ -16,7 +16,9 @@
    by the number of arguments used.
    Too bad we can't just use getopt for all of this, but we don't have
    enough information to do it right.  */
-
+#ifdef __cplusplus
+extern "C"
+#endif
 bool
 argmatch (char **argv, int argc, const char *sstr, const char *lstr,
           int minlen, int *valptr, int *skipptr)
