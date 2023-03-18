@@ -84,6 +84,8 @@ bool process_elf(uint8_t* bytes, size_t elf_file_size, char const* file_name)
 	}
 	ElfHeaderType* elf_hdr = reinterpret_cast<ElfHeaderType*>(bytes);
 
+	bool is_dyn = elf_hdr->e_type == 0x03;
+
 	bool is_aarch64 = (elf_hdr->e_machine == 183); /* EM_AARCH64 */
 
 	/* Check TLS segment alignment in program headers if api level is < 29 */
@@ -158,6 +160,7 @@ bool process_elf(uint8_t* bytes, size_t elf_file_size, char const* file_name)
 					case DT_AARCH64_BTI_PLT: if (is_aarch64 && api_level < 31) removed_name = "DT_AARCH64_BTI_PLT"; break;
 					case DT_AARCH64_PAC_PLT: if (is_aarch64 && api_level < 31) removed_name = "DT_AARCH64_PAC_PLT"; break;
 					case DT_AARCH64_VARIANT_PCS: if (is_aarch64 && api_level < 31) removed_name = "DT_AARCH64_VARIANT_PCS"; break;
+					case DT_PREINIT_ARRAY: if (is_dyn) removed_name = "DT_PREINIT_ARRAY"; break;
 				}
 				if (removed_name != nullptr) {
 					if (!quiet)
