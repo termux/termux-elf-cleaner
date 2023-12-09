@@ -311,19 +311,13 @@ int parse_file(const char *file_name)
 	return 0;
 }
 
-void parse_file_handler(std::deque<const char*>* files) {
-	while (!files->empty()) {
+void parse_file_handler(std::deque<const char*>* files, unsigned int pos) {
+	while (files->size() > pos) {
 		mutex.lock();
-		char* file = static_cast<char*>(malloc(strlen(files->front())));
-		if (file == NULL) {
-		 	perror("malloc(): Failed to allocate memory!");
-			continue;
-		}
-		memcpy(file, files->front(), strlen(files->front()));
-		files->pop_front();
+		const char *file = files->at(pos);
+		pos++;
 		mutex.unlock();
 		parse_file(file);
-		free(file);
 	}
 }
 
@@ -370,11 +364,12 @@ int main(int argc, char **argv)
 
 	std::deque<const char*> files;
 	std::vector<std::thread> threads(threads_count);
+	unsigned int pos = 0;
 
 	for (int i = skip_args + 1; i < argc; i++)
 		files.push_back(argv[i]);
 	for (int i = 0; i < threads_count; i++)
-		threads[i] = std::thread(parse_file_handler, &files);
+		threads[i] = std::thread(parse_file_handler, &files, pos);
 	for (std::thread& thread : threads)
 		if (thread.joinable()) thread.join();
 	return 0;
