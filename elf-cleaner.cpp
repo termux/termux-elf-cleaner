@@ -19,7 +19,10 @@ You should have received a copy of the GNU General Public License
 along with termux-elf-cleaner.  If not, see
 <https://www.gnu.org/licenses/>.  */
 
-#include <algorithm>
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,6 +31,12 @@ along with termux-elf-cleaner.  If not, see
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+
+#include <algorithm>
+#include <deque>
+#include <mutex>
+#include <thread>
+#include <vector>
 
 #include "arghandling.h"
 
@@ -55,6 +64,8 @@ int api_level = 21;
 bool dry_run = false;
 bool quiet = false;
 
+std::mutex mutex;
+
 static char const *const usage_message[] =
 { "\
 \n\
@@ -64,6 +75,7 @@ dynamic section entries which the Android linker warns about.\n\
 Options:\n\
 \n\
 --api-level NN        choose target api level, i.e. 21, 24, ..\n\
+--jobs N              run parallel on n thread(s).\n\
 --dry-run             print info but but do not remove entries\n\
 --quiet               do not print info about removed entries\n\
 --help                display this help and exit\n\
@@ -299,6 +311,22 @@ int parse_file(const char *file_name)
 	return 0;
 }
 
+void parse_file_handler(std::deque<const char*>* files) {
+	while (!files->empty()) {
+		mutex.lock();
+		char* file = static_cast<char*>(malloc(strlen(files->front())));
+		if (file == NULL) {
+		 	perror("malloc(): Failed to allocate memory!");
+			continue;
+		}
+		memcpy(file, files->front(), strlen(files->front()));
+		files->pop_front();
+		mutex.unlock();
+		parse_file(file);
+		free(file);
+	}
+}
+
 int main(int argc, char **argv)
 {
 	int skip_args = 0;
@@ -334,9 +362,20 @@ int main(int argc, char **argv)
 	if (argmatch(argv, argc, "-quiet", "--quiet", 3, NULL, &skip_args))
 		quiet = true;
 
-	for (int i = skip_args+1; i < argc; i++) {
-		if (parse_file(argv[i]) != 0)
-			return 1;
-	}
+	int threads_count = std::thread::hardware_concurrency();
+	int files_count = argc - (skip_args + 1);
+	argmatch(argv, argc, "-jobs", "--jobs", 1, &threads_count, &skip_args);
+	if (argc - (skip_args + 1) <= threads_count) threads_count = files_count;
+	if (threads_count < 1) threads_count = 1;
+
+	std::deque<const char*> files;
+	std::vector<std::thread> threads(threads_count);
+
+	for (int i = skip_args + 1; i < argc; i++)
+		files.push_back(argv[i]);
+	for (int i = 0; i < threads_count; i++)
+		threads[i] = std::thread(parse_file_handler, &files);
+	for (std::thread& thread : threads)
+		if (thread.joinable()) thread.join();
 	return 0;
 }
