@@ -311,7 +311,7 @@ int parse_file(const char *file_name)
 	return 0;
 }
 
-void parse_file_handler(std::deque<const char*>* files, unsigned int pos) {
+void parse_file_handler(std::deque<const char*>* files, unsigned int &pos) {
 	while (files->size() > pos) {
 		mutex.lock();
 		const char *file = files->at(pos);
@@ -369,7 +369,7 @@ int main(int argc, char **argv)
 	for (int i = skip_args + 1; i < argc; i++)
 		files.push_back(argv[i]);
 	for (int i = 0; i < threads_count; i++)
-		threads[i] = std::thread(parse_file_handler, &files, pos);
+		threads[i] = std::thread(parse_file_handler, &files, std::ref(pos));
 	for (std::thread& thread : threads)
 		if (thread.joinable()) thread.join();
 	return 0;
