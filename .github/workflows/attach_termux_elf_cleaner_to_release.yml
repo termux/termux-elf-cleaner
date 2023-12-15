@@ -29,8 +29,10 @@ jobs:
           ../configure
           make
       - name: Attach termux-elf-cleaner to release
-        run: >-
-          hub release edit
-          -m ""
-          -a "./build/termux-elf-cleaner"
-          "${GITHUB_REF/refs\/tags\//}"
+        uses: termux/upload-release-action@v4.1.0
+        with:
+          repo_token: ${{ secrets.TERMUXBOT2_TOKEN }}
+          file: "termux-elf-cleaner"
+          release_name:
+          tag: ${{ github.event.release.tag_name }}
+          checksums: sha256
