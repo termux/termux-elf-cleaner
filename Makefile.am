@@ -17,7 +17,7 @@
 # <https://www.gnu.org/licenses/>.
 
 SUBDIRS = tests
-AM_CXXFLAGS = -std=c++11 -Wall -Wextra -pedantic
+AM_CXXFLAGS = -std=c++11 -Wall -Wextra -pedantic -pthread
 
 bin_PROGRAMS = termux-elf-cleaner
 
