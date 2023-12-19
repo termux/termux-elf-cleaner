@@ -33,8 +33,8 @@ along with termux-elf-cleaner.  If not, see
 #include <unistd.h>
 
 #include <algorithm>
-#include <deque>
-#include <mutex>
+#include <future>
+#include <semaphore>
 #include <thread>
 #include <vector>
 
@@ -63,8 +63,6 @@ int api_level = 21;
 
 bool dry_run = false;
 bool quiet = false;
-
-std::mutex mutex;
 
 static char const *const usage_message[] =
 { "\
@@ -311,16 +309,6 @@ int parse_file(const char *file_name)
 	return 0;
 }
 
-void parse_file_handler(std::deque<const char*>* files, unsigned int &pos) {
-	while (files->size() > pos) {
-		mutex.lock();
-		const char *file = files->at(pos);
-		pos++;
-		mutex.unlock();
-		parse_file(file);
-	}
-}
-
 int main(int argc, char **argv)
 {
 	int skip_args = 0;
@@ -362,15 +350,19 @@ int main(int argc, char **argv)
 	if (argc - (skip_args + 1) <= threads_count) threads_count = files_count;
 	if (threads_count < 1) threads_count = 1;
 
-	std::deque<const char*> files;
-	std::vector<std::thread> threads(threads_count);
-	unsigned int pos = 0;
+	std::vector<std::future<void>> futures;
+	std::counting_semaphore sem(threads_count);
 
-	for (int i = skip_args + 1; i < argc; i++)
-		files.push_back(argv[i]);
-	for (int i = 0; i < threads_count; i++)
-		threads[i] = std::thread(parse_file_handler, &files, std::ref(pos));
-	for (std::thread& thread : threads)
-		if (thread.joinable()) thread.join();
+	for (int i = skip_args + 1; i < argc; i++) {
+		sem.acquire();
+		const char* file = argv[i];
+		futures.push_back(std::async([file, &sem]() {
+			parse_file(file);
+			sem.release();
+		}));
+	}
+
+	for (auto& future : futures) future.get();
+
 	return 0;
 }
