@@ -3,7 +3,7 @@ dnl To rebuild the 'configure' script from this, execute the command
 dnl	autoconf
 dnl in the directory containing this script.
 dnl
-dnl Copyright (C) 2022 Termux
+dnl Copyright (C) 2022-2023 Termux
 dnl
 dnl  This file is part of termux-elf-cleaner.
 dnl
@@ -22,7 +22,7 @@ dnl  along with termux-elf-cleaner.  If not, see
 dnl  <https://www.gnu.org/licenses/>.
 
 AC_PREREQ([2.69])
-AC_INIT([termux-elf-cleaner], [2.2.0], [support@termux.dev])
+AC_INIT([termux-elf-cleaner], [2.2.1], [support@termux.dev])
 
 AM_INIT_AUTOMAKE([foreign])
 
@@ -31,7 +31,7 @@ AC_PROG_CC
 AC_PROG_CXX
 AC_LANG(C++)
 
-copyright="Copyright (C) 2022 Termux."
+copyright="Copyright (C) 2022-2023 Termux."
 AC_DEFINE_UNQUOTED(COPYRIGHT, ["$copyright"],
   [Short copyright string for this version of termux-elf-cleaner.])
 
