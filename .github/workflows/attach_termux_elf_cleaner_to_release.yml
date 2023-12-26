@@ -32,7 +32,7 @@ jobs:
         uses: termux/upload-release-action@v4.1.0
         with:
           repo_token: ${{ secrets.TERMUXBOT2_TOKEN }}
-          file: "termux-elf-cleaner"
+          file: "build/termux-elf-cleaner"
           release_name:
           tag: ${{ github.event.release.tag_name }}
           checksums: sha256
