@@ -12,22 +12,15 @@ jobs:
         with:
           ref: ${{ env.GITHUB_REF }}
 
-      - name: Prepare
+      - name: Install required packages
         run: |
-          autoreconf -vfi
-          mkdir build
-
-      - name: Configure
+          sudo apt update
+          sudo apt upgrade
+          sudo apt install cmake ninja-build
+      - name: Build
         run: |
-          cd build
-          ../configure
-
-      - name: Make
-        run: |
-          cd build
-          make
-
+          cmake . -Bbuild -GNinja
+          ninja -C build/
       - name: Test
         run: |
-          cd build
-          make check
+          ninja -C build/ test

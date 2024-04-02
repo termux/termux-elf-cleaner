@@ -3,8 +3,16 @@ elf-cleaner
 # In case of out-of-src build in a directory build/:
 build/
 
+# Some people prefer to use this as build directory
+out/
+
+# Used for editor integration (completions, etc)
+compile_commands.json
+
 *~
 
+# Generated files from old autotools
+# Although we no longer use autotools, some contributors might still be having it in their trees
 Makefile.in
 aclocal.m4
 autom4te.cache/

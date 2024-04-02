@@ -22,12 +22,18 @@ jobs:
             echo "The versionName '${RELEASE_VERSION_NAME/v/}' is not a valid version as per semantic version '2.0.0' spec in the format 'major.minor.patch(-prerelease)(+buildmetadata)'. https://semver.org/spec/v2.0.0.html."
             exit 1
           fi
+      - name: Install required packages
+        run: |
+          sudo apt update
+          sudo apt upgrade
+          sudo apt install cmake ninja-build
       - name: Build
         run: |
-          autoreconf -vfi
-          mkdir build && cd build
-          ../configure
-          make
+          cmake . -Bbuild -GNinja
+          ninja -C build/
+      - name: Test
+        run: |
+          ninja -C build/ test
       - name: Attach termux-elf-cleaner to release
         uses: termux/upload-release-action@v4.1.0
         with:
