@@ -60,3 +60,11 @@ foreach(arch ${ARCHES})
             ${arch}
     )
 endforeach()
+
+# Thread test
+add_test(
+  NAME "thread"
+  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/test-threads.sh
+          ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}
+          ${CMAKE_CURRENT_SOURCE_DIR}
+  )
