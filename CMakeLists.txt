@@ -31,8 +31,32 @@ target_compile_definitions("${PACKAGE_NAME}"
   PRIVATE "PACKAGE_NAME=\"${PACKAGE_NAME}\""
 )
 
+
 enable_testing()
-add_test(
-  NAME "tests"
-  COMMAND bash -c "${CMAKE_CURRENT_SOURCE_DIR}/tests/test.sh ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME} ${CMAKE_CURRENT_SOURCE_DIR}"
-  )
+
+# Dynamic section tests
+foreach(arch ${ARCHES})
+  foreach(api ${APIS})
+    add_test(
+      NAME "dynamic-section-${arch}-api${api}"
+      COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/test-dynamic-section.sh
+              ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}
+              ${CMAKE_CURRENT_SOURCE_DIR}
+              curl-7.83.1
+              ${arch}
+              ${api}
+      )
+  endforeach()
+endforeach()
+
+# TLS alignment tests
+foreach(arch ${ARCHES})
+  add_test(
+    NAME "tls-alignment-${arch}-api${api}"
+    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/test-tls-alignment.sh
+            ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}
+            ${CMAKE_CURRENT_SOURCE_DIR}
+            valgrind-3.19.0
+            ${arch}
+    )
+endforeach()
