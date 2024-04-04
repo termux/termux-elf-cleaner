@@ -43,20 +43,6 @@ along with termux-elf-cleaner.  If not, see
 // Include a local elf.h copy as not all platforms have it.
 #include "elf.h"
 
-#define DT_GNU_HASH 0x6ffffef5
-#define DT_VERSYM 0x6ffffff0
-#define DT_FLAGS_1 0x6ffffffb
-#define DT_VERNEEDED 0x6ffffffe
-#define DT_VERNEEDNUM 0x6fffffff
-
-#define DT_AARCH64_BTI_PLT 0x70000001
-#define DT_AARCH64_PAC_PLT 0x70000003
-#define DT_AARCH64_VARIANT_PCS 0x70000005
-
-#define DF_1_NOW	0x00000001	/* Set RTLD_NOW for this object.  */
-#define DF_1_GLOBAL	0x00000002	/* Set RTLD_GLOBAL for this object.  */
-#define DF_1_NODELETE	0x00000008	/* Set RTLD_NODELETE for this object.*/
-
 /* Default to api level 21 unless arg --api-level given  */
 uint8_t supported_dt_flags_1 = (DF_1_NOW | DF_1_GLOBAL);
 int api_level = 21;
@@ -159,7 +145,7 @@ bool process_elf(uint8_t* bytes, size_t elf_file_size, char const* file_name)
 				switch (dynamic_section_entry->d_tag) {
 					case DT_GNU_HASH: if (api_level < 23) removed_name = "DT_GNU_HASH"; break;
 					case DT_VERSYM: if (api_level < 23) removed_name = "DT_VERSYM"; break;
-					case DT_VERNEEDED: if (api_level < 23) removed_name = "DT_VERNEEDED"; break;
+					case DT_VERNEED: if (api_level < 23) removed_name = "DT_VERNEED"; break;
 					case DT_VERNEEDNUM: if (api_level < 23) removed_name = "DT_VERNEEDNUM"; break;
 					case DT_VERDEF: if (api_level < 23) removed_name = "DT_VERDEF"; break;
 					case DT_VERDEFNUM: if (api_level < 23) removed_name = "DT_VERDEFNUM"; break;

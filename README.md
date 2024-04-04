@@ -16,7 +16,7 @@ This utility strips away the following dynamic section entries:
 - `DT_RUNPATH` - supported from Android 7.0.
 - `DT_VERDEF` - supported from Android 6.0.
 - `DT_VERDEFNUM` - supported from Android 6.0.
-- `DT_VERNEEDED` - supported from Android 6.0.
+- `DT_VERNEED` - supported from Android 6.0.
 - `DT_VERNEEDNUM` - supported from Android 6.0.
 - `DT_VERSYM` - supported from Android 6.0.
 - `DT_AARCH64_BTI_PLT` - supported from Android 12.
