@@ -185,14 +185,25 @@ bool process_elf(uint8_t* bytes, size_t elf_file_size, char const* file_name)
 					}
 				}
 			}
-		}
-		else if (api_level < 23 &&
+		} else if (api_level < 23 &&
 			 (section_header_entry->sh_type == SHT_GNU_verdef ||
 			  section_header_entry->sh_type == SHT_GNU_verneed ||
 			  section_header_entry->sh_type == SHT_GNU_versym)) {
 			if (!quiet)
-				printf("%s: Removing version section from '%s'\n",
-				       PACKAGE_NAME, file_name);
+				switch (section_header_entry->sh_type) {
+				case SHT_GNU_verdef:
+					printf("%s: Removing VERDEF section from '%s'\n",
+					       PACKAGE_NAME, file_name);
+					break;
+				case SHT_GNU_verneed:
+					printf("%s: Removing VERNEED section from '%s'\n",
+					       PACKAGE_NAME, file_name);
+					break;
+				case SHT_GNU_versym:
+					printf("%s: Removing VERSYM section from '%s'\n",
+					       PACKAGE_NAME, file_name);
+					break;
+				}
 			if (!dry_run)
 				section_header_entry->sh_type = SHT_NULL;
 		}
