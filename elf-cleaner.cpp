@@ -162,10 +162,11 @@ bool process_elf(uint8_t* bytes, size_t elf_file_size, char const* file_name)
 						printf("%s: Removing the %s dynamic section entry from '%s'\n",
 						       PACKAGE_NAME, removed_name, file_name);
 					// Tag the entry with DT_NULL and put it last:
-					if (!dry_run)
+					if (!dry_run) {
 						dynamic_section_entry->d_tag = DT_NULL;
-					// Decrease j to process new entry index:
-					std::swap(dynamic_section[j--], dynamic_section[last_nonnull_entry_idx--]);
+						// Decrease j to process new entry index:
+						std::swap(dynamic_section[j--], dynamic_section[last_nonnull_entry_idx--]);
+					}
 				} else if (dynamic_section_entry->d_tag == DT_FLAGS_1) {
 					// Remove unsupported DF_1_* flags to avoid linker warnings.
 					decltype(dynamic_section_entry->d_un.d_val) orig_d_val =
