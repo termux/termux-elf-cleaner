@@ -22,7 +22,6 @@ set(PACKAGE_NAME "termux-elf-cleaner" CACHE STRING "Name of the package")
 
 add_executable("${PACKAGE_NAME}"
   elf-cleaner.cpp
-  arghandling.c
 )
 
 target_compile_definitions("${PACKAGE_NAME}"

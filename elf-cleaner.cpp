@@ -24,6 +24,7 @@ along with termux-elf-cleaner.  If not, see
 #endif
 
 #include <fcntl.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -38,17 +39,18 @@ along with termux-elf-cleaner.  If not, see
 #include <thread>
 #include <vector>
 
-#include "arghandling.h"
-
 // Include a local elf.h copy as not all platforms have it.
 #include "elf.h"
+
+/* Taken from emacs */
+#define ARRAYELTS(arr) (sizeof (arr) / sizeof (arr)[0])
 
 /* Default to api level 21 unless arg --api-level given  */
 uint8_t supported_dt_flags_1 = (DF_1_NOW | DF_1_GLOBAL);
 int api_level = 21;
 
-bool dry_run = false;
-bool quiet = false;
+int dry_run = 0;
+int quiet = 0;
 
 static char const *const usage_message[] =
 { "\
@@ -297,49 +299,77 @@ int parse_file(const char *file_name)
 
 int main(int argc, char **argv)
 {
-	int skip_args = 0;
-	if (argc == 1 || argmatch(argv, argc, "-help", "--help", 3, NULL, &skip_args)) {
+	int c;
+	int options_index = 0;
+	int threads_count = std::thread::hardware_concurrency();
+
+	static struct option options[] = {
+		{"api-level", required_argument, NULL, 'a'},
+		{"dry-run", no_argument, &dry_run, 1},
+		{"jobs", required_argument, NULL, 'j'},
+		{"quiet", no_argument, &quiet, 1},
+		{"help", no_argument, NULL, 'h'},
+		{"version", no_argument, NULL, 'v'},
+		{0, 0, 0, 0}
+	};
+
+	while (true)
+	{
+		c = getopt_long(argc, argv, "hva:dqj:",
+				options, &options_index);
+
+		if (c == -1)
+			break;
+
+		switch (c) {
+		case 'a':
+			api_level = atoi(optarg);
+			if (api_level <= 0)
+				api_level = 21;
+			break;
+		case 'j':
+			threads_count = atoi(optarg);
+			if (threads_count < 1)
+				threads_count = 1;
+			break;
+		case 'v':
+			printf("%s %s\n", PACKAGE_NAME, PACKAGE_VERSION);
+			printf(("%s\n"
+				"%s comes with ABSOLUTELY NO WARRANTY.\n"
+				"You may redistribute copies of %s\n"
+				"under the terms of the GNU General Public License.\n"
+				"For more information about these matters, "
+				"see the file named COPYING.\n"),
+				COPYRIGHT, PACKAGE_NAME, PACKAGE_NAME);
+			return 0;
+		case 'h':
+			printf("Usage: %s [OPTION-OR-FILENAME]...\n", argv[0]);
+			for (unsigned int i = 0; i < ARRAYELTS(usage_message); i++)
+				fputs(usage_message[i], stdout);
+			return 0;
+		}
+	}
+
+	if (optind >= argc) {
 		printf("Usage: %s [OPTION-OR-FILENAME]...\n", argv[0]);
 		for (unsigned int i = 0; i < ARRAYELTS(usage_message); i++)
 			fputs(usage_message[i], stdout);
 		return 0;
 	}
 
-	if (argmatch(argv, argc, "-version", "--version", 3, NULL, &skip_args)) {
-		printf("%s %s\n", PACKAGE_NAME, PACKAGE_VERSION);
-		printf(("%s\n"
-			"%s comes with ABSOLUTELY NO WARRANTY.\n"
-			"You may redistribute copies of %s\n"
-			"under the terms of the GNU General Public License.\n"
-			"For more information about these matters, "
-			"see the file named COPYING.\n"),
-			COPYRIGHT, PACKAGE_NAME, PACKAGE_NAME);
-		return 0;
-	}
-
-	argmatch(argv, argc, "-api-level", "--api-level", 3, &api_level, &skip_args);
+	int files_count = argc - (optind);
+	if (argc - (optind) <= threads_count)
+		threads_count = files_count;
 
 	if (api_level >= 23) {
 		// The supported DT_FLAGS_1 values as of Android 6.0.
 		supported_dt_flags_1 = (DF_1_NOW | DF_1_GLOBAL | DF_1_NODELETE);
 	}
 
-	if (argmatch(argv, argc, "-dry-run", "--dry-run", 3, NULL, &skip_args))
-		dry_run = true;
-
-	if (argmatch(argv, argc, "-quiet", "--quiet", 3, NULL, &skip_args))
-		quiet = true;
-
-	int threads_count = std::thread::hardware_concurrency();
-	int files_count = argc - (skip_args + 1);
-	argmatch(argv, argc, "-jobs", "--jobs", 1, &threads_count, &skip_args);
-	if (argc - (skip_args + 1) <= threads_count) threads_count = files_count;
-	if (threads_count < 1) threads_count = 1;
-
 	std::vector<std::future<void>> futures;
 	std::counting_semaphore sem(threads_count);
 
-	for (int i = skip_args + 1; i < argc; i++) {
+	for (int i = optind; i < argc; i++) {
 		sem.acquire();
 		const char* file = argv[i];
 		futures.push_back(std::async([file, &sem]() {
