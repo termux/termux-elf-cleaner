@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.25 FATAL_ERROR)
 
 set(VERSION_MAJOR 3)
 set(VERSION_MINOR 0)
-set(VERSION_PATCH 0)
+set(VERSION_PATCH 1)
 
 set(VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 
@@ -30,6 +30,7 @@ target_compile_definitions("${PACKAGE_NAME}"
   PRIVATE "PACKAGE_NAME=\"${PACKAGE_NAME}\""
 )
 
+install(TARGETS "${PACKAGE_NAME}" DESTINATION bin)
 
 enable_testing()
 
