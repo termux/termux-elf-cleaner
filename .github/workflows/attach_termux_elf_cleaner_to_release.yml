@@ -35,7 +35,7 @@ jobs:
         run: |
           ninja -C build/ test
       - name: Attach termux-elf-cleaner to release
-        uses: termux/upload-release-action@v4.1.0
+        uses: termux/upload-release-action@v4.2.0
         with:
           repo_token: ${{ secrets.TERMUXBOT2_TOKEN }}
           file: "build/termux-elf-cleaner"
