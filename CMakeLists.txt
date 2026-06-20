@@ -30,6 +30,13 @@ target_compile_definitions("${PACKAGE_NAME}"
   PRIVATE "PACKAGE_NAME=\"${PACKAGE_NAME}\""
 )
 
+find_package(Threads REQUIRED)
+
+target_link_libraries(
+  "${PACKAGE_NAME}"
+  Threads::Threads
+)
+
 install(TARGETS "${PACKAGE_NAME}" DESTINATION bin)
 
 enable_testing()
