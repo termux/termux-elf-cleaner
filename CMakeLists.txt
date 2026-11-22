@@ -75,3 +75,11 @@ add_test(
           ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}
           ${CMAKE_CURRENT_SOURCE_DIR}
   )
+
+# Exit status test
+add_test(
+  NAME "exit-status"
+  COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/test-exit-status.sh
+          ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}
+          ${CMAKE_CURRENT_SOURCE_DIR}
+  )
