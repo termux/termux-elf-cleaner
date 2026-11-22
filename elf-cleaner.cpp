@@ -378,19 +378,23 @@ int main(int argc, char **argv)
 		supported_dt_flags_1 = (DF_1_NOW | DF_1_GLOBAL | DF_1_NODELETE);
 	}
 
-	std::vector<std::future<void>> futures;
+	std::vector<std::future<int>> futures;
 	std::counting_semaphore sem(threads_count);
 
 	for (int i = optind; i < argc; i++) {
 		sem.acquire();
 		const char* file = argv[i];
 		futures.push_back(std::async([file, &sem]() {
-			parse_file(file);
+			int ret = parse_file(file);
 			sem.release();
+			return ret;
 		}));
 	}
 
-	for (auto& future : futures) future.get();
+	int exit_status = 0;
+	for (auto& future : futures)
+		if (future.get() != 0)
+			exit_status = 1;
 
-	return 0;
+	return exit_status;
 }
