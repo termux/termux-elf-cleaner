@@ -26,7 +26,7 @@ done
 for i in {1..100}; do
   for arch in aarch64 arm i686 x86_64; do
     for api in 21 24; do
-      if not cmp -s "$source_dir/tests/curl-7.83.1-$arch-api$api-cleaned" "$test_dir/curl-7.83.1-$arch-api$api-threads-$i.test"; then
+      if ! cmp -s "$source_dir/tests/curl-7.83.1-$arch-api$api-cleaned" "$test_dir/curl-7.83.1-$arch-api$api-threads-$i.test"; then
         echo "Expected and actual files differ for curl-7.83.1-$arch"
         exit 1
       fi
