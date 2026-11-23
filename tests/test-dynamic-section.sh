@@ -41,7 +41,7 @@ if [ "$("$elf_cleaner" --api-level "$api" "$test_dir/$testfile")" != "$expected_
   echo "Logs do not match for $testfile"
   exit 1
 fi
-if not cmp -s "$test_dir/$testfile" "$expectedfile"; then
+if ! cmp -s "$test_dir/$testfile" "$expectedfile"; then
   echo "Expected and actual files differ for $testfile"
   exit 1
 fi
